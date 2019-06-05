@@ -14,7 +14,7 @@ Shader "PoissonBlending"
 	CGINCLUDE
 	#include "UnityCG.cginc"
 
-		struct appdata
+	struct appdata
 	{
 		float4 vertex : POSITION;
 		float2 uv : TEXCOORD0;
@@ -44,47 +44,44 @@ Shader "PoissonBlending"
 		return o;
 	}
 
-	#define tex2D_Main(uv) tex2D(_MainTex, i.uv + uv * _MainTex_TexelSize.xy );
-	#define tex2D_Blend(uv) tex2D(_BlendTex, i.uv + uv * _BlendTex_TexelSize.xy );
+	// Get gradient whti adjacent pixels 
+	inline fixed3 gradient(sampler2D tex, float2 uv, float2 texel)
+	{
+		fixed3 c = fixed3(0.5, 0.5, 0.5);
 
+		fixed3 center = tex2D(tex, uv).rgb;
+		fixed3 right = center - tex2D(tex, uv + float2(texel.x, 0)).rgb;
+		fixed3 left = center - tex2D(tex, uv + float2(-texel.x, 0)).rgb;
+		fixed3 up = center - tex2D(tex, uv + float2(0, texel.y)).rgb;
+		fixed3 down = center - tex2D(tex, uv + float2(0, -texel.y)).rgb;
+
+		c += (right + left + up + down) * 2;
+		return c;
+	}
 
 	fixed4 frag(v2f i) : SV_Target
 	{
-		fixed4 base = tex2D(_MainTex, i.uv);
+		fixed4 target = tex2D(_MainTex, i.uv);
 		fixed mask = tex2D(_MaskTex, i.uv).r;
 
 		if (mask < 0.5) {
-			return base;
+			return target;
 		}
 
+		fixed3 src = tex2D(_BlendTex, i.uv).rgb;
 
-		float2 next[4];
-		next[0] = float2(-1.0, 0.0);
-		next[1] = float2(1.0, 0.0);
-		next[2] = float2(0.0, -1.0);
-		next[3] = float2(0.0, 1.0);
+		fixed3 gradSrc = gradient(_BlendTex, i.uv, _BlendTex_TexelSize.xy);
+		fixed3 gradDst = gradient(_MainTex, i.uv, _MainTex_TexelSize.xy);
+		fixed3 gradMix = (gradSrc + gradDst) * 0.5;
 
-		fixed3 blend = tex2D(_BlendTex, i.uv).rgb;
-		fixed3 c = float3(0.0, 0.0, 0.0);
+		src.r += ((gradSrc.r - gradDst.r) > 0.0 ? gradSrc.r : gradDst.r) - 0.5;
+		src.g += ((gradSrc.g - gradDst.g) > 0.0 ? gradSrc.g : gradDst.g) - 0.5;
+		src.b += ((gradSrc.b - gradDst.b) > 0.0 ? gradSrc.b : gradDst.b) - 0.5;
+		
+		//src /= 4.0;
 
-		for (int n = 0; n < 4; n++)
-		{
-			float2 uv = next[n];
-			c += blend - tex2D_Blend(uv);
-			if (mask < 0.5)
-			{
-				c += tex2D_Main(uv);
-			}
-			else
-			{
-				c += c;
-			}
-		}
-
-		c /= 4;
-		//
-		base.rgb = c;
-		return base;
+		target.rgb = src;
+		return target;
 	}
 
 	ENDCG
