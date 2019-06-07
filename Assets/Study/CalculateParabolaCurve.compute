@@ -1,0 +1,12 @@
+﻿#pragma enable_d3d11_debug_symbols
+
+#pragma kernel CalculateParabolaCurve
+
+RWStructuredBuffer<float> buffer;
+float a, p, q;
+
+[numthreads(4, 1, 1)]
+void CalculateParabolaCurve (uint3 tid : SV_DispatchThreadID)
+{
+    buffer[tid.x] = a * (tid.x - p) * (tid.x - p) + q;
+}
