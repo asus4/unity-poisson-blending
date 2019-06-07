@@ -337,8 +337,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6f93a0d07e974a69b5b0ab35d437cd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Shader: {fileID: 7200000, guid: fc987040573524b26ac9a371e3e220d4, type: 3}
+  compute: {fileID: 7200000, guid: fc987040573524b26ac9a371e3e220d4, type: 3}
   a: 2
   p: 0
   q: 0
-  CurveLength: 32
+  curveLength: 32

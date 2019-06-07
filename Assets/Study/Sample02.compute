@@ -1,0 +1,10 @@
+﻿#pragma kernel CSMain
+
+RWStructuredBuffer<int> buffer;
+
+[numthreads(4,4,1)]
+void CSMain (uint3 tid : SV_DispatchThreadID)
+{
+    int id = tid.x + tid.y * 8;
+    buffer[id] = id;
+}
