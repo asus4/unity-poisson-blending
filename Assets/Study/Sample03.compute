@@ -1,10 +1,13 @@
 ﻿#pragma kernel CSMain
 
 RWTexture2D<float4> tex;
-float w, h;
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    tex[id.xy] = float4(id.x / w, id.y / h,  0.0, 1.0);
+    float w, h;
+    tex.GetDimensions(w, h);
+
+    float2 uv = float2(id.x/w, id.y/h);
+    tex[id.xy] = float4(uv, 0.0, 1.0);
 }
