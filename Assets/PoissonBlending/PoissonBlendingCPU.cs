@@ -29,13 +29,13 @@ namespace PoissonBlending
         {
             Debug.Log($"Starting: {target.format}");
 
-            var result = new Texture2D(target.width, target.height, target.format, 0, false);
+            var result = new Texture2D(target.width, target.height, target.format, false, false);
             rawImage.texture = result;
 
             yield return null;
 
             var sw = Stopwatch.StartNew();
-            var interior = GetMask(mask);
+            // var interior = GetMask(mask);
             sw.Stop();
             double d = (double)sw.ElapsedTicks / (double)TimeSpan.TicksPerMillisecond;
             Debug.Log($"GetMask: {d} ms");
