@@ -35,7 +35,7 @@ namespace PoissonBlending
             yield return null;
 
             var sw = Stopwatch.StartNew();
-            // var interior = GetMask(mask);
+            var interior = GetMask(mask);
             sw.Stop();
             double d = (double)sw.ElapsedTicks / (double)TimeSpan.TicksPerMillisecond;
             Debug.Log($"GetMask: {d} ms");

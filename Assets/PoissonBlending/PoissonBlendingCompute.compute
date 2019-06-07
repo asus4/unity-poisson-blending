@@ -1,9 +1,7 @@
-﻿// Each #kernel tells which function to compile; you can have many kernels
+﻿
 #pragma kernel MakeMask
 #pragma kernel PoissonBlending
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
 RWTexture2D<float4> Result;
 
 [numthreads(16, 16, 1)]
