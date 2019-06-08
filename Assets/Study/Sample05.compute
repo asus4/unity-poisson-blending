@@ -3,16 +3,15 @@
 RWStructuredBuffer<int> buffer;
 
 
-int recursive(int n)
+void recursive(int id)
 {
     int depth = 0;
-
     while(depth < 2)
     {
-        n = n + n; 
+        // buffer[id] = buffer[id] + buffer[id];
+        buffer[id]++;
         depth++;
     }
-    return n;
 }
 
 
@@ -20,5 +19,6 @@ int recursive(int n)
 void CSMain (uint3 tid : SV_DispatchThreadID)
 {
     int id = tid.x + tid.y * 8;
-    buffer[id] = recursive(id);
+    buffer[id] = id;
+    recursive(id);
 }
