@@ -12,17 +12,35 @@ namespace PoissonBlending
         [SerializeField] Texture2D target = null;
         [SerializeField] ComputeShader compute = null;
 
+        RenderTexture tex;
 
 
-        IEnumerator Start()
+        void Start()
         {
-            // Wait for warming up
-            yield return new WaitForSeconds(1.0f);
+            tex = new RenderTexture(64, 64, 0);
+            tex.enableRandomWrite = true;
+            tex.Create();
 
-            int kernalMakeMask = compute.FindKernel("MakeMask");
+            int kernal = compute.FindKernel("MakeMask");
 
-            compute.SetTexture(kernalMakeMask, "Result", target);
-            Debug.Log($"compute: {compute}, kernel: {kernalMakeMask}");
+            compute.SetTexture(kernal, "Result", tex);
+            compute.Dispatch(kernal, 4, 4, 1);
         }
+
+        void OnGUI()
+        {
+            int w = Screen.width / 2;
+            int h = Screen.height / 2;
+            int s = 512;
+
+            GUI.DrawTexture(new Rect(w - s / 2, h - s / 2, s, s), tex);
+        }
+
+        void OnDestroy()
+        {
+            tex.Release();
+        }
+
+
     }
 }

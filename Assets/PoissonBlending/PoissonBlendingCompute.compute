@@ -7,7 +7,10 @@ RWTexture2D<float4> Result;
 [numthreads(16, 16, 1)]
 void MakeMask(uint3 id : SV_DispatchThreadID)
 {
-	Result[id.xy] = float4(id.x & id.y, (id.x & 15) / 15.0, (id.y & 15) / 15.0, 0.0);
+	float w, h;
+    Result.GetDimensions(w, h);
+
+    Result[id.xy] = float4(id.x/w, id.y/h, 0.0, 1.0);
 }
 
 [numthreads(16, 16, 1)]

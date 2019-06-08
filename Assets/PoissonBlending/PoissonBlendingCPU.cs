@@ -14,16 +14,10 @@ namespace PoissonBlending
 
     public class PoissonBlendingCPU : MonoBehaviour
     {
-        [SerializeField]
-        Texture2D source;
-        [SerializeField]
-        Texture2D mask;
-        [SerializeField]
-        Texture2D target;
-
-        [SerializeField]
-        RawImage rawImage;
-
+        [SerializeField] Texture2D source = null;
+        [SerializeField] Texture2D mask = null;
+        [SerializeField] Texture2D target = null;
+        [SerializeField] RawImage rawImage = null;
 
         IEnumerator Start()
         {
