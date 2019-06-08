@@ -1,0 +1,24 @@
+﻿#pragma kernel CSMain
+
+RWStructuredBuffer<int> buffer;
+
+
+int recursive(int n)
+{
+    int depth = 0;
+
+    while(depth < 2)
+    {
+        n = n + n; 
+        depth++;
+    }
+    return n;
+}
+
+
+[numthreads(4,4,1)]
+void CSMain (uint3 tid : SV_DispatchThreadID)
+{
+    int id = tid.x + tid.y * 8;
+    buffer[id] = recursive(id);
+}

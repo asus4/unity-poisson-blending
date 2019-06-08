@@ -3,9 +3,21 @@
 RWTexture2D<float4> texCopy;
 Texture2D<float4> tex;
 
+SamplerState _LinearClamp;
+SamplerState _LinearRepeat;
+SamplerState _PointClamp;
+SamplerState _PointRepeat;
+
 [numthreads(8,8,1)]
 void CSMain (uint2 id : SV_DispatchThreadID)
 {
-    float4 t = tex[id];
+    // float4 t = tex.mips[0][id]; // same
+    // float4 t = tex[id];
+
+    float w, h;
+    texCopy.GetDimensions(w, h);
+    float2 uv = float2(id.x/w, id.y/h);
+    
+    float4 t = tex.SampleLevel(_LinearClamp, uv, 0);
     texCopy[id] = t;
 }

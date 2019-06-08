@@ -1,6 +1,7 @@
 ﻿#pragma kernel CSMain
 
 RWTexture2D<float4> tex;
+RWStructuredBuffer<int> buffer;
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
