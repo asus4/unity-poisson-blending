@@ -1,14 +1,15 @@
 ﻿// Poisson Blending on GPU
 // http://cs.brown.edu/courses/csci1950-g/results/proj2/edwallac/
 
-#pragma kernel MakeMask
+#pragma kernel MakeBorder
 #pragma kernel PoissonBlending
 
 Texture2D<float4> Source;
 Texture2D<float4> Mask;
 Texture2D<float4> Target;
-RWTexture2D<float4> Result;
 
+RWTexture2D<float4> Result;
+RWTexture2D<float> Border;
 
 
 inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
@@ -17,9 +18,31 @@ inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
 }
 
 [numthreads(16, 16, 1)]
-void MakeMask(uint2 tid : SV_DispatchThreadID)
+void MakeBorder(uint2 tid : SV_DispatchThreadID)
 {
+	float n = Mask[tid].r;
+	if (n < 0.5)
+	{
+		Border[tid] = 0.0;
+		return;
+	}
 
+	uint2 right = tid + uint2(1, 0);
+	uint2 left = tid + uint2(-1, 0);
+	uint2 up = tid + uint2(0, 1);
+	uint2 down = tid + uint2(0, -1);
+
+	if (
+		Mask[right].r < 0.5
+		|| Mask[left].r < 0.5
+		|| Mask[up].r < 0.5
+		|| Mask[down].r < 0.5)
+	{
+		Border[tid] = 1.0;
+	}
+	else {
+		Border[tid] = 0.0;
+	}
 }
 
 [numthreads(16, 16, 1)]
