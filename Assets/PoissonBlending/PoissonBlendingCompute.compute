@@ -1,20 +1,28 @@
-﻿
-#pragma kernel MakeMask
+﻿// Poisson Blending on GPU
+// http://cs.brown.edu/courses/csci1950-g/results/proj2/edwallac/
+
 #pragma kernel PoissonBlending
 
+Texture2D<float4> Source;
+Texture2D<float4> Mask;
+Texture2D<float4> Target;
 RWTexture2D<float4> Result;
 
-[numthreads(16, 16, 1)]
-void MakeMask(uint3 id : SV_DispatchThreadID)
-{
-	float w, h;
-    Result.GetDimensions(w, h);
 
-    Result[id.xy] = float4(id.x/w, id.y/h, 0.0, 1.0);
-}
+
 
 [numthreads(16, 16, 1)]
-void PoissonBlending(uint3 id : SV_DispatchThreadID)
+void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 {
-	Result[id.xy] = float4(id.x & id.y, (id.x & 15) / 15.0, (id.y & 15) / 15.0, 0.0);
+	float width, height;
+    Result.GetDimensions(width, height);
+
+    float mask = Mask[tid].x;
+    if(mask < 0.5)
+    {
+        Result[tid] = Target[tid];
+        return;
+    }
+
+    Result[tid] = float4(tid.x / width, tid.y / height, 0.0, 1.0);
 }
