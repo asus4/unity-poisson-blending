@@ -1,7 +1,10 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using Unity.Mathematics;
+using Debug = UnityEngine.Debug;
+
 
 namespace PoissonBlending
 {
@@ -14,7 +17,8 @@ namespace PoissonBlending
         [SerializeField] ComputeShader compute = null;
 
         RenderTexture tex;
-
+        int kernel;
+        uint3 threads;
 
         void Start()
         {
@@ -25,16 +29,10 @@ namespace PoissonBlending
             tex.enableRandomWrite = true;
             tex.Create();
 
-            int kernal = compute.FindKernel("PoissonBlending");
-            uint3 threads = compute.GetThreadGroupSize(kernal);
+            kernel = compute.FindKernel("PoissonBlending");
+            threads = compute.GetThreadGroupSize(kernel);
             Debug.Assert(source.width % threads.x == 0);
             Debug.Assert(source.height % threads.y == 0);
-
-            compute.SetTexture(kernal, "Source", source);
-            compute.SetTexture(kernal, "Mask", mask);
-            compute.SetTexture(kernal, "Target", target);
-            compute.SetTexture(kernal, "Result", tex);
-            compute.Dispatch(kernal, source.width / (int)threads.x, source.height / (int)threads.y, 1);
         }
 
         void OnGUI()
@@ -44,6 +42,21 @@ namespace PoissonBlending
             int s = 512;
 
             GUI.DrawTexture(new Rect(w - s / 2, h - s / 2, s, s), tex);
+        }
+
+        void Update()
+        {
+            var sw = Stopwatch.StartNew();
+
+            compute.SetTexture(kernel, "Source", source);
+            compute.SetTexture(kernel, "Mask", mask);
+            compute.SetTexture(kernel, "Target", target);
+            compute.SetTexture(kernel, "Result", tex);
+            compute.Dispatch(kernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
+
+            sw.Stop();
+            double d = (double)sw.ElapsedTicks / (double)TimeSpan.TicksPerMillisecond;
+            Debug.Log($"GetMask: {d} ms");
         }
 
         void OnDestroy()

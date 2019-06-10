@@ -24,5 +24,5 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
         return;
     }
 
-    Result[tid] = float4(tid.x / width, tid.y / height, 0.0, 1.0);
+	Result[tid] = Source[tid];
 }
