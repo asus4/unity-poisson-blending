@@ -58,7 +58,7 @@ namespace PoissonBlending
 
             sw.Stop();
             double d = (double)sw.ElapsedTicks / (double)TimeSpan.TicksPerMillisecond;
-            Debug.Log($"GetMask: {d} ms");
+            Debug.Log($"GPU: {d} ms");
         }
 
         void OnDestroy()

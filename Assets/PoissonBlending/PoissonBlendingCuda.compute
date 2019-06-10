@@ -1,0 +1,66 @@
+﻿// Poisson Blending on GPU
+// http://cs.brown.edu/courses/csci1950-g/results/proj2/edwallac/
+
+#pragma kernel MakeMask
+#pragma kernel PoissonBlending
+
+Texture2D<float4> Source;
+Texture2D<float4> Mask;
+Texture2D<float4> Target;
+RWTexture2D<float4> Result;
+
+
+
+inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
+{
+	return Result[tid].rgb + center - Source[tid].rgb;
+}
+
+[numthreads(16, 16, 1)]
+void MakeMask(uint2 tid : SV_DispatchThreadID)
+{
+
+}
+
+[numthreads(16, 16, 1)]
+void PoissonBlending(uint2 tid : SV_DispatchThreadID)
+{
+	float width, height;
+	Result.GetDimensions(width, height);
+
+	// Init with target
+	Result[tid] = Target[tid];
+
+	float mask = Mask[tid].x;
+	// Filter edge case
+	if (mask < 0.1
+		|| tid.x == 0 || tid.y == 0
+		|| tid.x >= (uint)(width - 1.0) || tid.y >= (uint)(height - 1.0))
+	{
+		// Outside of the mask area
+		return;
+	}
+
+	float3 src = Source[tid].rgb;
+	float3 dst = Target[tid].rgb;
+
+	uint2 right = tid + uint2(1, 0);
+	uint2 left = tid + uint2(-1, 0);
+	uint2 up = tid + uint2(0, 1);
+	uint2 down = tid + uint2(0, -1);
+
+	for (int i = 0; i < 800; i++)
+	{
+		float3 sum = float3(0.0, 0.0, 0.0);
+		sum += solve(src, dst, right);
+		sum += solve(src, dst, left);
+		sum += solve(src, dst, up);
+		sum += solve(src, dst, down);
+
+		Result[tid] = float4(sum * 0.25, 1.0);
+
+		//GroupMemoryBarrier();
+		GroupMemoryBarrierWithGroupSync();
+	}
+
+}
