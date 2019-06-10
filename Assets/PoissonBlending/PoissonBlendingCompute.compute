@@ -22,8 +22,9 @@ inline float3 abs3(in float3 a, in float3 b)
 
 inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
 {
+	float3 c = (Mask[tid].r > 0.1) ? Result[tid].rgb : Target[tid].rgb;
 	float3 gradSrc = center - Source[tid].rgb;
-	return Result[tid].rgb + gradSrc;
+	return c + gradSrc;
 
 	//float3 gradDst = centerD - Target[tid].rgb;
 	//return Result[tid].rgb + gradSrc * 0.99 + gradDst * 0.01;
