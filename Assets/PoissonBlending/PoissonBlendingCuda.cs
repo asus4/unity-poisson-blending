@@ -63,6 +63,7 @@ namespace PoissonBlending
 
             compute.SetTexture(kernelBlend, "Source", source);
             compute.SetTexture(kernelBlend, "Mask", mask);
+            compute.SetTexture(kernelBlend, "Border", border);
             compute.SetTexture(kernelBlend, "Target", target);
             compute.SetTexture(kernelBlend, "Result", result);
             compute.Dispatch(kernelBlend, tGroups.x, tGroups.y, tGroups.z);

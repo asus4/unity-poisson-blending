@@ -12,9 +12,12 @@ RWTexture2D<float4> Result;
 RWTexture2D<float> Border;
 
 
-inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
+inline float3 solve(in float3 src, in float3 centerD, in uint2 tid)
 {
-	return Result[tid].rgb + center - Source[tid].rgb;
+
+	float3 c = (Border[tid].r > 0.5) ? Target[tid].rgb : Result[tid].rgb;
+	c += src - Source[tid].rgb;
+	return c;
 }
 
 [numthreads(16, 16, 1)]
@@ -72,15 +75,17 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 	uint2 up = tid + uint2(0, 1);
 	uint2 down = tid + uint2(0, -1);
 
-	for (int i = 0; i < 800; i++)
+	for (int i = 0; i < 1000; i++)
 	{
 		float3 sum = float3(0.0, 0.0, 0.0);
+
 		sum += solve(src, dst, right);
 		sum += solve(src, dst, left);
 		sum += solve(src, dst, up);
 		sum += solve(src, dst, down);
 
-		Result[tid] = float4(sum * 0.25, 1.0);
+		sum = clamp(sum * 0.25, float3(0, 0, 0), float3(1, 1, 1));
+		Result[tid] = float4(sum, 1.0);
 
 		//GroupMemoryBarrier();
 		GroupMemoryBarrierWithGroupSync();
