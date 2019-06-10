@@ -10,36 +10,28 @@ Texture2D<float4> Target;
 RWTexture2D<float4> Result;
 
 
-inline float3 gradient(in Texture2D<float4> tex, in uint2 tid)
+inline float3 abs3(in float3 a, in float3 b)
 {
-	float3 c = float3(0.5, 0.5, 0.5);
-	float3 center = tex[tid].rgb;
-
-	c += center - tex[tid + uint2(1, 0)].rgb; // Right
-	c += center - tex[tid + uint2(-1, 0)].rgb; // Left 
-	c += center - tex[tid + uint2(0, 1)].rgb; // Up
-	c += center - tex[tid + uint2(0, -1)].rgb; // Down
-
-	return c;
+	return float3(
+		abs(a.r) > abs(b.r) ? a.r : b.r,
+		abs(a.g) > abs(b.g) ? a.g : b.g,
+		abs(a.b) > abs(b.b) ? a.b : b.b
+		);
 }
 
-inline void solve(inout float3 c, in float3 center, in uint2 tid)
+inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
 {
-	c += center - Source[tid].rgb;
-	if (Mask[tid].r < 0.1)
-	{
-		c += Target[tid].rgb;
-	}
-	else
-	{
-		c += Result[tid].rgb;
-	}
+	float3 gradSrc = center - Source[tid].rgb;
+	return Result[tid].rgb + gradSrc;
+
+	//float3 gradDst = centerD - Target[tid].rgb;
+	//return Result[tid].rgb + gradSrc * 0.99 + gradDst * 0.01;
 }
 
 [numthreads(16, 16, 1)]
 void Init(uint2 tid : SV_DispatchThreadID)
 {
-	Result[tid] = Source[tid];
+	Result[tid] = Target[tid];
 }
 
 [numthreads(16, 16, 1)]
@@ -59,14 +51,20 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 		return;
 	}
 
-	//float3 grad = gradient(Source, tid);
-	float3 sum = float3(0.0, 0.0, 0.0);
-	float3 center = Source[tid].rgb;
+	float3 src = Source[tid].rgb;
+	float3 dst = Target[tid].rgb;
 
-	solve(sum, center, tid + uint2(1, 0));
-	solve(sum, center, tid + uint2(-1, 0));
-	solve(sum, center, tid + uint2(0, 1));
-	solve(sum, center, tid + uint2(0, -1));
+	for (int i = 0; i < 500; i++)
+	{
+		float3 sum = float3(0.0, 0.0, 0.0);
+		sum += solve(src, dst, tid + uint2(1, 0));
+		sum += solve(src, dst, tid + uint2(-1, 0));
+		sum += solve(src, dst, tid + uint2(0, 1));
+		sum += solve(src, dst, tid + uint2(0, -1));
 
-	Result[tid] = float4(sum, 1.0);
+		Result[tid] = float4(sum * 0.25, 1.0);
+
+		GroupMemoryBarrierWithGroupSync();
+	}
+
 }
