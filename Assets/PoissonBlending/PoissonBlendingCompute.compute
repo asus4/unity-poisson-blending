@@ -1,7 +1,6 @@
 ﻿// Poisson Blending on GPU
 // http://cs.brown.edu/courses/csci1950-g/results/proj2/edwallac/
 
-#pragma kernel Init
 #pragma kernel PoissonBlending
 
 Texture2D<float4> Source;
@@ -29,16 +28,13 @@ inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
 }
 
 [numthreads(16, 16, 1)]
-void Init(uint2 tid : SV_DispatchThreadID)
-{
-	Result[tid] = Target[tid];
-}
-
-[numthreads(16, 16, 1)]
 void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 {
 	float width, height;
 	Result.GetDimensions(width, height);
+
+	// Init with target
+	Result[tid] = Target[tid];
 
 	float mask = Mask[tid].x;
 	// Filter edge case
@@ -47,7 +43,6 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 		|| tid.x >= (uint)(width - 1.0) || tid.y >= (uint)(height - 1.0))
 	{
 		// Outside of the mask area
-		Result[tid] = Target[tid];
 		return;
 	}
 
@@ -59,7 +54,7 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 	uint2 up = tid + uint2(0, 1);
 	uint2 down = tid + uint2(0, -1);
 
-	for (int i = 0; i < 2000; i++)
+	for (int i = 0; i < 800; i++)
 	{
 		float3 sum = float3(0.0, 0.0, 0.0);
 		sum += solve(src, dst, right);
@@ -69,6 +64,7 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 
 		Result[tid] = float4(sum * 0.25, 1.0);
 
+		//GroupMemoryBarrier();
 		GroupMemoryBarrierWithGroupSync();
 	}
 

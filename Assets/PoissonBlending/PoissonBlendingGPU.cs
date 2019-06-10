@@ -16,7 +16,6 @@ namespace PoissonBlending
         [SerializeField] ComputeShader compute = null;
 
         RenderTexture tex;
-        int initKernel;
         int kernel;
         uint3 threads;
 
@@ -34,14 +33,6 @@ namespace PoissonBlending
             Debug.Assert(source.width % threads.x == 0);
             Debug.Assert(source.height % threads.y == 0);
 
-            initKernel = compute.FindKernel("Init");
-
-            compute.SetTexture(initKernel, "Source", source);
-            compute.SetTexture(initKernel, "Mask", mask);
-            compute.SetTexture(initKernel, "Target", target);
-            compute.SetTexture(initKernel, "Result", tex);
-            compute.Dispatch(initKernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
-
         }
 
         void OnGUI()
@@ -58,12 +49,6 @@ namespace PoissonBlending
         void Update()
         {
             var sw = Stopwatch.StartNew();
-
-            compute.SetTexture(initKernel, "Source", source);
-            compute.SetTexture(initKernel, "Mask", mask);
-            compute.SetTexture(initKernel, "Target", target);
-            compute.SetTexture(initKernel, "Result", tex);
-            //compute.Dispatch(initKernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
 
             compute.SetTexture(kernel, "Source", source);
             compute.SetTexture(kernel, "Mask", mask);
