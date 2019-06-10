@@ -1,6 +1,7 @@
 ﻿// Poisson Blending on GPU
 // http://cs.brown.edu/courses/csci1950-g/results/proj2/edwallac/
 
+#pragma kernel Init
 #pragma kernel PoissonBlending
 
 Texture2D<float4> Source;
@@ -9,20 +10,63 @@ Texture2D<float4> Target;
 RWTexture2D<float4> Result;
 
 
+inline float3 gradient(in Texture2D<float4> tex, in uint2 tid)
+{
+	float3 c = float3(0.5, 0.5, 0.5);
+	float3 center = tex[tid].rgb;
 
+	c += center - tex[tid + uint2(1, 0)].rgb; // Right
+	c += center - tex[tid + uint2(-1, 0)].rgb; // Left 
+	c += center - tex[tid + uint2(0, 1)].rgb; // Up
+	c += center - tex[tid + uint2(0, -1)].rgb; // Down
+
+	return c;
+}
+
+inline void solve(inout float3 c, in float3 center, in uint2 tid)
+{
+	c += center - Source[tid].rgb;
+	if (Mask[tid].r < 0.1)
+	{
+		c += Target[tid].rgb;
+	}
+	else
+	{
+		c += Result[tid].rgb;
+	}
+}
+
+[numthreads(16, 16, 1)]
+void Init(uint2 tid : SV_DispatchThreadID)
+{
+	Result[tid] = Source[tid];
+}
 
 [numthreads(16, 16, 1)]
 void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 {
 	float width, height;
-    Result.GetDimensions(width, height);
+	Result.GetDimensions(width, height);
 
-    float mask = Mask[tid].x;
-    if(mask < 0.5)
-    {
-        Result[tid] = Target[tid];
-        return;
-    }
+	float mask = Mask[tid].x;
+	// Filter edge case
+	if (mask < 0.1
+		|| tid.x == 0 || tid.y == 0
+		|| tid.x >= (uint)(width - 1.0) || tid.y >= (uint)(height - 1.0))
+	{
+		// Outside of the mask area
+		Result[tid] = Target[tid];
+		return;
+	}
 
-	Result[tid] = Source[tid];
+	//float3 grad = gradient(Source, tid);
+	float3 sum = float3(0.0, 0.0, 0.0);
+	float3 center = Source[tid].rgb;
+
+	solve(sum, center, tid + uint2(1, 0));
+	solve(sum, center, tid + uint2(-1, 0));
+	solve(sum, center, tid + uint2(0, 1));
+	solve(sum, center, tid + uint2(0, -1));
+
+	Result[tid] = float4(sum, 1.0);
 }

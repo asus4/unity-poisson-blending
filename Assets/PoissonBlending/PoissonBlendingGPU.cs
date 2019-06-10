@@ -33,6 +33,14 @@ namespace PoissonBlending
             threads = compute.GetThreadGroupSize(kernel);
             Debug.Assert(source.width % threads.x == 0);
             Debug.Assert(source.height % threads.y == 0);
+
+            int initKernel = compute.FindKernel("Init");
+            compute.SetTexture(initKernel, "Source", source);
+            compute.SetTexture(initKernel, "Mask", mask);
+            compute.SetTexture(initKernel, "Target", target);
+            compute.SetTexture(initKernel, "Result", tex);
+            compute.Dispatch(initKernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
+
         }
 
         void OnGUI()
