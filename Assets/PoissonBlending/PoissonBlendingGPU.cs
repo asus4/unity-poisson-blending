@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 using Unity.Mathematics;
@@ -49,9 +48,11 @@ namespace PoissonBlending
         {
             int w = Screen.width / 2;
             int h = Screen.height / 2;
-            int s = 512;
 
-            GUI.DrawTexture(new Rect(w - s / 2, h - s / 2, s, s), tex);
+            GUI.DrawTexture(new Rect(0, 0, w, h), source);
+            GUI.DrawTexture(new Rect(w, 0, w, h), mask);
+            GUI.DrawTexture(new Rect(0, h, w, h), target);
+            GUI.DrawTexture(new Rect(w, h, w, h), tex);
         }
 
         void Update()
@@ -62,7 +63,7 @@ namespace PoissonBlending
             compute.SetTexture(initKernel, "Mask", mask);
             compute.SetTexture(initKernel, "Target", target);
             compute.SetTexture(initKernel, "Result", tex);
-            compute.Dispatch(initKernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
+            //compute.Dispatch(initKernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
 
             compute.SetTexture(kernel, "Source", source);
             compute.SetTexture(kernel, "Mask", mask);

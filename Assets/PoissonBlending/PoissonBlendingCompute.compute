@@ -54,13 +54,18 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 	float3 src = Source[tid].rgb;
 	float3 dst = Target[tid].rgb;
 
-	for (int i = 0; i < 500; i++)
+	uint2 right = tid + uint2(1, 0);
+	uint2 left = tid + uint2(-1, 0);
+	uint2 up = tid + uint2(0, 1);
+	uint2 down = tid + uint2(0, -1);
+
+	for (int i = 0; i < 2000; i++)
 	{
 		float3 sum = float3(0.0, 0.0, 0.0);
-		sum += solve(src, dst, tid + uint2(1, 0));
-		sum += solve(src, dst, tid + uint2(-1, 0));
-		sum += solve(src, dst, tid + uint2(0, 1));
-		sum += solve(src, dst, tid + uint2(0, -1));
+		sum += solve(src, dst, right);
+		sum += solve(src, dst, left);
+		sum += solve(src, dst, up);
+		sum += solve(src, dst, down);
 
 		Result[tid] = float4(sum * 0.25, 1.0);
 
