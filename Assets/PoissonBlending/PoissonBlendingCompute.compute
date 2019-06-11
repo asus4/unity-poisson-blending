@@ -2,20 +2,22 @@
 // http://cs.brown.edu/courses/csci1950-g/results/proj2/edwallac/
 
 #pragma kernel PoissonBlending
+#pragma kernel Init
 
 Texture2D<float4> Source;
 Texture2D<float4> Mask;
 Texture2D<float4> Target;
 RWTexture2D<float4> Result;
+int Iterations;
 
 
 inline float3 abs3(in float3 a, in float3 b)
 {
 	return float3(
-		abs(a.r) > abs(b.r) ? a.r : b.r,
-		abs(a.g) > abs(b.g) ? a.g : b.g,
-		abs(a.b) > abs(b.b) ? a.b : b.b
-		);
+	abs(a.r) > abs(b.r) ? a.r : b.r,
+	abs(a.g) > abs(b.g) ? a.g : b.g,
+	abs(a.b) > abs(b.b) ? a.b : b.b
+	);
 }
 
 inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
@@ -25,6 +27,13 @@ inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
 
 	//float3 gradDst = centerD - Target[tid].rgb;
 	//return Result[tid].rgb + gradSrc * 0.99 + gradDst * 0.01;
+}
+
+[numthreads(16, 16, 1)]
+void Init(uint2 tid : SV_DispatchThreadID)
+{
+	// Init with target
+	Result[tid] = Target[tid];
 }
 
 [numthreads(16, 16, 1)]
@@ -39,8 +48,8 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 	float mask = Mask[tid].x;
 	// Filter edge case
 	if (mask < 0.1
-		|| tid.x == 0 || tid.y == 0
-		|| tid.x >= (uint)(width - 1.0) || tid.y >= (uint)(height - 1.0))
+	|| tid.x == 0 || tid.y == 0
+	|| tid.x >= (uint)(width - 1.0) || tid.y >= (uint)(height - 1.0))
 	{
 		// Outside of the mask area
 		return;
@@ -54,7 +63,7 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 	uint2 up = tid + uint2(0, 1);
 	uint2 down = tid + uint2(0, -1);
 
-	for (int i = 0; i < 800; i++)
+	for (int i = 0; i < Iterations; i++)
 	{
 		float3 sum = float3(0.0, 0.0, 0.0);
 		sum += solve(src, dst, right);
@@ -62,10 +71,19 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 		sum += solve(src, dst, up);
 		sum += solve(src, dst, down);
 
-		Result[tid] = float4(sum * 0.25, 1.0);
+		sum *= 0.25;
 
-		//GroupMemoryBarrier();
+		// Check convergence?
+		if(distance(Result[tid].rgb, sum) < 0.001)
+		{
+			return;
+		}
+
+		Result[tid] = float4(sum, 1.0);
+
+		// GroupMemoryBarrier();
 		GroupMemoryBarrierWithGroupSync();
+		
 	}
 
 }
