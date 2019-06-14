@@ -8,7 +8,6 @@ Texture2D<float4> Source;
 Texture2D<float4> Mask;
 Texture2D<float4> Target;
 RWTexture2D<float4> Result;
-int Iterations;
 
 
 inline float3 solve(in float3 center, in float3 centerD, in uint2 tid)
@@ -33,9 +32,6 @@ void PoissonBlending(uint2 tid : SV_DispatchThreadID)
 {
 	float width, height;
 	Result.GetDimensions(width, height);
-
-	// Init with target
-	//Result[tid] = Target[tid];
 
 	float mask = Mask[tid].x;
 	// Filter edge case

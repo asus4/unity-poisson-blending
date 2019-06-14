@@ -1,12 +1,15 @@
 ﻿using UnityEngine;
 using Unity.Mathematics;
 
-public static class ComputeShaderExtension
+namespace PoissonBlending
 {
-    public static uint3 GetThreadGroupSize(this ComputeShader compute, int kernelIndex)
+    public static class ComputeShaderExtension
     {
-        uint x, y, z;
-        compute.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
-        return new uint3(x, y, z);
+        public static uint3 GetThreadGroupSize(this ComputeShader compute, int kernelIndex)
+        {
+            uint x, y, z;
+            compute.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
+            return new uint3(x, y, z);
+        }
     }
 }
