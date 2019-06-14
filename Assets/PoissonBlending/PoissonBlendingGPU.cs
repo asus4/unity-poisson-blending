@@ -18,8 +18,14 @@ namespace PoissonBlending
         int iterations = 100;
 
         RenderTexture tex;
-        int kernel;
+        int kernelInit;
+        int kernelPoisson;
         uint3 threads;
+
+        static int _Source = Shader.PropertyToID("Source");
+        static int _Target = Shader.PropertyToID("Target");
+        static int _Result = Shader.PropertyToID("Result");
+        static int _Mask = Shader.PropertyToID("Mask");
 
         void Start()
         {
@@ -30,15 +36,12 @@ namespace PoissonBlending
             tex.enableRandomWrite = true;
             tex.Create();
 
-            kernel = compute.FindKernel("PoissonBlending");
-            threads = compute.GetThreadGroupSize(kernel);
+            kernelPoisson = compute.FindKernel("PoissonBlending");
+            kernelInit = compute.FindKernel("Init");
+
+            threads = compute.GetThreadGroupSize(kernelPoisson);
             Debug.Assert(source.width % threads.x == 0);
             Debug.Assert(source.height % threads.y == 0);
-
-            int initKernel = compute.FindKernel("Init");
-            compute.SetTexture(initKernel, "Target", target);
-            compute.SetTexture(initKernel, "Result", tex);
-            compute.Dispatch(initKernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
 
         }
 
@@ -57,12 +60,21 @@ namespace PoissonBlending
         {
             var sw = Stopwatch.StartNew();
 
-            compute.SetTexture(kernel, "Source", source);
-            compute.SetTexture(kernel, "Mask", mask);
-            compute.SetTexture(kernel, "Target", target);
-            compute.SetTexture(kernel, "Result", tex);
-            compute.SetInt("Iterations", iterations);
-            compute.Dispatch(kernel, source.width / (int)threads.x, source.height / (int)threads.y, 1);
+            // Init
+            compute.SetTexture(kernelInit, _Target, target);
+            compute.SetTexture(kernelInit, _Result, tex);
+            compute.Dispatch(kernelInit, source.width / (int)threads.x, source.height / (int)threads.y, 1);
+
+            // Poisson Blending
+            compute.SetTexture(kernelPoisson, _Source, source);
+            compute.SetTexture(kernelPoisson, _Mask, mask);
+            compute.SetTexture(kernelPoisson, _Target, target);
+            compute.SetTexture(kernelPoisson, _Result, tex);
+
+            for (int i = 0; i < iterations; i++)
+            {
+                compute.Dispatch(kernelPoisson, source.width / (int)threads.x, source.height / (int)threads.y, 1);
+            }
 
             sw.Stop();
             double d = (double)sw.ElapsedTicks / (double)TimeSpan.TicksPerMillisecond;
